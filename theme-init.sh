@@ -28,7 +28,7 @@ if [ "$conf_app_theme_package" == "wp-cli" ]; then
 elif [ "$conf_app_theme_package" == "wpackagist" ]; then
     # Install theme from wpackagist via composer
     composer require wpackagist-theme/$conf_app_theme_name:$conf_app_theme_ver --update-no-dev
-elif [ "$conf_app_theme_package" == "composer" ]; then
+elif [ "$conf_app_theme_package" == "composer_bitbucket" ]; then
     ## Install plugin from private bitbacket repository via composer
     project=$conf_app_theme_name
     project_ver=$conf_app_theme_ver
