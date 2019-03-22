@@ -32,7 +32,10 @@ elif [ "$conf_app_theme_package" == "composer_bitbucket" ]; then
     ## Install plugin from private bitbacket repository via composer
     project=$conf_app_theme_name
     project_ver=$conf_app_theme_ver
-    project_zip="https://bitbucket.org/$project/get/$project_ver.zip"
+    # Rename the package if config exist
+    if [ ! -z "$conf_app_theme_rename" ]; then
+        project=$conf_app_theme_rename
+    fi
     composer config repositories.$project '{"type":"package","package": {"name": "'$project'","version": "'$project_ver'","type": "wordpress-theme","dist": {"url": "'$project_zip'","type": "zip"}}}'
     composer require $project:dev-master --update-no-dev
 fi
