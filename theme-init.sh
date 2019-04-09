@@ -31,7 +31,11 @@ elif [ "$conf_app_theme_package" == "wpackagist" ]; then
 elif [ "$conf_app_theme_package" == "composer_bitbucket" ]; then
     ## Install plugin from private bitbacket repository via composer
     project=$conf_app_theme_name
-    project_ver=$conf_app_theme_ver
+    if [ ! -z "$conf_app_theme_branch" ]; then
+        project_ver=$conf_app_theme_branch
+    else
+        project_ver=$conf_app_theme_ver
+    fi
     project_zip="https://bitbucket.org/$project/get/$project_ver.zip"
     # Rename the package if config exist
     if [ ! -z "$conf_app_theme_rename" ]; then
