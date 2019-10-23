@@ -1,47 +1,142 @@
 #!/bin/bash
 
-# Theme Init - Wp Pro Club
-# by DimaMinka (https://dimaminka.com)
-# https://github.com/wp-pro-club/init
+# WPI Theme
+# by DimaMinka (https://dima.mk)
+# https://github.com/wpi-pw/app
 
-source ${PWD}/lib/app-init.sh
+# Get config files and put to array
+wpi_confs=()
+for ymls in wpi-config/*
+do
+  wpi_confs+=("$ymls")
+done
 
-version=""
-zip="^(https|git)(:\/\/|@)([^\/:]+)[\/:]([^\/:]+)\/([^\/:]+)\/([^\/:]+)\/(.+).zip$"
+# Get wpi-source for yml parsing, noroot, errors etc
+source <(curl -s https://raw.githubusercontent.com/wpi-pw/template-workflow/master/wpi-source.sh)
+
 # Get the theme and run install by type
 printf "${GRN}=============================================${NC}\n"
-printf "${GRN}Installing theme $conf_app_theme_name${NC}\n"
+printf "${GRN}Installing theme $(wpi_yq themes.parent.name)${NC}\n"
 printf "${GRN}=============================================${NC}\n"
+zip="^(https|git)(:\/\/|@)([^\/:]+)[\/:]([^\/:]+)\/([^\/:]+)\/([^\/:]+)\/(.+).zip$"
+cur_env=$1
+version=""
+package=$(wpi_yq themes.parent.name)
+package_ver=$(wpi_yq themes.parent.ver)
+repo_name=$(echo ${package} | cut -d"/" -f2)
+no_dev="--no-dev"
+dev_commit=$(echo ${package_ver} | cut -d"#" -f1)
+ver_commit=$(echo ${package_ver} | cut -d"#" -f2)
+# Check the workflow type
+content_dir=$([ "$(wpi_yq init.workflow)" == "bedrock" ] && echo "app" || echo "wp-content")
+
 # Running theme install via wp-cli
-if [ "$conf_app_theme_package" == "wp-cli" ]; then
-    # Install from zip
-    if [[ $conf_app_theme_zip =~ $zip ]]; then
-        wp theme install $conf_app_theme_zip
-    else
-        # Get theme version from config
-        if [ "$conf_app_theme_ver" != "*" ]; then
-            version="--version=$conf_app_theme_ver --force"
-        fi
-        # Default theme install via wp-cli
-        wp theme install $conf_app_theme_name ${version}
+if [ "$(wpi_yq themes.parent.package)" == "wp-cli" ]; then
+  # Install from zip
+  if [[ $(wpi_yq themes.parent.zip) =~ $zip ]]; then
+    wp theme install $(wpi_yq themes.parent.zip) --quiet
+  else
+    # Get theme version from config
+    if [ "$package_ver" != "null" ] && [ "$package_ver" != "*" ]; then
+      version="--version=$package_ver --force"
     fi
-elif [ "$conf_app_theme_package" == "wpackagist" ]; then
-    # Install theme from wpackagist via composer
-    composer require wpackagist-theme/$conf_app_theme_name:$conf_app_theme_ver --update-no-dev
-elif [ "$conf_app_theme_package" == "composer_bitbucket" ]; then
-    ## Install plugin from private bitbacket repository via composer
-    project=$conf_app_theme_name
-    project_ver=$conf_app_theme_ver
-    if [ ! -z "$conf_app_theme_branch" ]; then
-        package_name=$conf_app_theme_branch
-    else
-        package_name=$project_ver
+    # Default plugin install via wp-cli
+    wp theme install $package --quiet ${version}
+  fi
+
+  # Run renaming process
+  if [ "$(wpi_yq themes.parent.rename)" != "null" ]; then
+    # Run rename command
+    mv ${PWD}/web/$content_dir/themes/$package ${PWD}/web/$content_dir/themes/$(wpi_yq themes.parent.rename)
+  fi
+fi
+
+# Get theme version from config
+if [ "$package_ver" != "null" ] && [ "$package_ver" != "*" ]; then
+  json_ver=$package_ver
+  # check for commit version
+  if [ "$dev_commit" == "dev-master" ]; then
+    json_ver="dev-master"
+  fi
+else
+  # default versions
+  json_ver="dev-master"
+  package_ver="dev-master"
+  ver_commit="master"
+fi
+
+# Running theme install via composer from bitbucket/github
+if [ "$(wpi_yq themes.parent.package)" == "bitbucket" ] || [ "$(wpi_yq themes.parent.package)" == "github" ]; then
+  # Install plugin from private/public repository via composer
+  # Check for setup settings
+  if [ "$(wpi_yq themes.parent.setup)" != "null" ]; then
+    name=$(wpi_yq themes.parent.setup)
+
+    # OAUTH for bitbucket via key and secret
+    if [ "$(wpi_yq themes.parent.package)" == "bitbucket" ] && [ "$(wpi_yq init.setup.$name.bitbucket.key)" != "null" ] && [ "$(wpi_yq init.setup.$name.bitbucket.secret)" != "null" ]; then
+      composer config --global --auth bitbucket-oauth.bitbucket.org $(wpi_yq init.setup.$name.bitbucket.key) $(wpi_yq init.setup.$name.bitbucket.secret)
     fi
-    project_zip="https://bitbucket.org/$project/get/$package_name.zip"
-    # Rename the package if config exist
-    if [ ! -z "$conf_app_theme_rename" ]; then
-        project=$conf_app_theme_rename
+
+    # OAUTH for github via key and secret
+    if [ "$(wpi_yq themes.parent.package)" == "github" ] && [ "$(wpi_yq init.setup.$name.github-token)" != "null" ] && [ "$(wpi_yq init.setup.$name.github-token)" != "null" ]; then
+      composer config -g github-oauth.github.com $(wpi_yq init.setup.$name.github-token)
     fi
-    composer config repositories.$project '{"type":"package","package": {"name": "'$project'","version": "'$project_ver'","type": "wordpress-theme","dist": {"url": "'$project_zip'","type": "zip"}}}'
-    composer require $project:dev-master --update-no-dev
+  fi
+
+  # Build package url by package type
+  if [ "$(wpi_yq themes.parent.package)" == "bitbucket" ]; then
+    package_url="https://bitbucket.org/$package"
+    package_zip="https://bitbucket.org/$package/get/$ver_commit.zip"
+  elif [ "$(wpi_yq themes.parent.package)" == "github" ]; then
+    package_url="git@github.com:$package.git"
+    package_zip="https://github.com/$package/archive/$ver_commit.zip"
+  fi
+
+  # Rename the package if config exist
+  if [ "$(wpi_yq themes.parent.rename)" != "null" ]; then
+      package=$(wpi_yq themes.parent.rename)
+  fi
+
+  # Get GIT for local and dev
+  if [ "$cur_env" != "production" ] && [ "$cur_env" != "staging" ]; then
+    # Reset --no-dev
+    no_dev=""
+
+    # Composer config and install - GIT version
+    composer config repositories.$package '{"type":"package","package": {"name": "'$package'","version": "'$json_ver'","type": "wordpress-theme","source": {"url": "'$package_url'","type": "git","reference": "master"}}}'
+    composer require $package:$package_ver --update-no-dev --quiet
+  else
+    # Remove the package from composer cache
+    if [ -d ~/.cache/composer/files/$package ]; then
+      rm -rf ~/.cache/composer/files/$package
+    fi
+
+    # Composer config and install - ZIP version
+    composer config repositories.$package '{"type":"package","package": {"name": "'$package'","version": "'$package_ver'","type": "wordpress-theme","dist": {"url": "'$package_zip'","type": "zip"}}}'
+    composer require $package:$package_ver --update-no-dev --quiet
+  fi
+fi
+
+# Theme setup variarable
+name=$(wpi_yq themes.parent.setup)
+# Check if setup exist
+if [ "$(wpi_yq init.setup.$name.composer)" != "null" ]; then
+  composer=$(wpi_yq init.setup.$name.composer)
+  # Run install composer script in the plugin
+  if [ "$composer" != "null" ] && [ "$composer" == "install" ] || [ "$composer" == "update" ]; then
+    composer $composer -d ${PWD}/web/$content_dir/themes/$repo_name $no_dev --quiet
+  elif [ "$composer" != "null" ] && [ "$composer" == "dump-autoload" ]; then
+    composer -d ${PWD}/web/$content_dir/themes/$repo_name dump-autoload -o --quiet
+  fi
+fi
+
+# Run npm scripts
+if [ "$(wpi_yq init.setup.$name.npm)" != "null" ]; then
+  # run npm install
+  npm i ${PWD}/web/$content_dir/themes/$repo_name &> /dev/null
+  if [ "$cur_env" == "production" ] || [ "$cur_env" == "staging" ]; then
+    eval $(wpi_yq init.setup.$name.npm.prod) --prefix ${PWD}/web/$content_dir/themes/$repo_name
+  else
+    eval $(wpi_yq init.setup.$name.npm.dev) --prefix ${PWD}/web/$content_dir/themes/$repo_name
+  fi
 fi
