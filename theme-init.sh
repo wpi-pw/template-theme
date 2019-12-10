@@ -19,7 +19,7 @@ printf "${GRN}=============================================${NC}\n"
 printf "${GRN}Installing theme $(wpi_yq themes.parent.name)${NC}\n"
 printf "${GRN}=============================================${NC}\n"
 zip="^(https|git)(:\/\/|@)([^\/:]+)[\/:]([^\/:]+)\/([^\/:]+)\/([^\/:]+)\/(.+).zip$"
-cur_env=$1
+cur_env=$(cur_env)
 version=""
 package=$(wpi_yq themes.parent.name)
 package_ver=$(wpi_yq themes.parent.ver)
@@ -46,7 +46,7 @@ if [ "$(wpi_yq themes.parent.package)" == "wp-cli" ]; then
 
   # Run renaming process
   if [ "$(wpi_yq themes.parent.rename)" != "null" ]; then
-    # Run rename command
+    # Run rename commands
     mv ${PWD}/web/$content_dir/themes/$package ${PWD}/web/$content_dir/themes/$(wpi_yq themes.parent.rename)
   fi
 fi
@@ -83,6 +83,16 @@ if [ "$(wpi_yq themes.parent.package)" == "bitbucket" ] || [ "$(wpi_yq themes.pa
     fi
   fi
 
+  # Get parent theme branch keys
+  mapfile -t branch < <( wpi_yq "themes.parent.branch" 'keys' )
+  # Get parent theme branch by current env
+  for i in "${!branch[@]}"
+  do
+    if [ "${branch[$i]}" == $cur_env ]; then
+      ver_commit=$(wpi_yq "themes.parent.branch.$cur_env")
+    fi
+  done
+
   # Build package url by package type
   if [ "$(wpi_yq themes.parent.package)" == "bitbucket" ]; then
     package_url="https://bitbucket.org/$package"
@@ -98,7 +108,7 @@ if [ "$(wpi_yq themes.parent.package)" == "bitbucket" ] || [ "$(wpi_yq themes.pa
   fi
 
   # Get GIT for local and dev
-  if [ "$cur_env" != "production" ] && [ "$cur_env" != "staging" ]; then
+  if [ "$cur_env" == "local" ] || [ "$cur_env" == "dev" ]; then
     # Reset --no-dev
     no_dev=""
 
