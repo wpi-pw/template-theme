@@ -27,6 +27,7 @@ repo_name=$(echo ${package} | cut -d"/" -f2)
 no_dev="--no-dev"
 dev_commit=$(echo ${package_ver} | cut -d"#" -f1)
 ver_commit=$(echo ${package_ver} | cut -d"#" -f2)
+setup_name=$(wpi_yq themes.parent.setup)
 # Check the workflow type
 content_dir=$([ "$(wpi_yq init.workflow)" == "bedrock" ] && echo "app" || echo "wp-content")
 
@@ -127,26 +128,29 @@ if [ "$(wpi_yq themes.parent.package)" == "bitbucket" ] || [ "$(wpi_yq themes.pa
   fi
 fi
 
-# Theme setup variarable
-name=$(wpi_yq themes.parent.setup)
 # Check if setup exist
-if [ "$(wpi_yq init.setup.$name.composer)" != "null" ]; then
-  composer=$(wpi_yq init.setup.$name.composer)
-  # Run install composer script in the plugin
+if [ "$setup_name" != "null" ]; then
+  composer=$(wpi_yq init.setup.$setup_name.composer)
+  # Run install composer script in the theme
   if [ "$composer" != "null" ] && [ "$composer" == "install" ] || [ "$composer" == "update" ]; then
-    composer $composer -d ${PWD}/web/$content_dir/themes/$repo_name $no_dev --quiet
+    composer $composer -d ${PWD}/web/app/themes/$package $no_dev --quiet
   elif [ "$composer" != "null" ] && [ "$composer" == "dump-autoload" ]; then
-    composer -d ${PWD}/web/$content_dir/themes/$repo_name dump-autoload -o --quiet
+    composer dump-autoload -o -d ${PWD}/web/app/themes/$package --quiet
+  elif [ "$composer" != "null" ] && [ "$composer" == "install && dump-autoload" ]; then
+    composer install -d ${PWD}/web/app/themes/$package $no_dev --quiet
+    composer dump-autoload -o -d ${PWD}/web/app/themes/$package --quiet
   fi
-fi
 
-# Run npm scripts
-if [ "$(wpi_yq init.setup.$name.npm)" != "null" ]; then
-  # run npm install
-  npm i ${PWD}/web/$content_dir/themes/$repo_name &> /dev/null
-  if [ "$cur_env" == "production" ] || [ "$cur_env" == "staging" ]; then
-    eval $(wpi_yq init.setup.$name.npm.prod) --prefix ${PWD}/web/$content_dir/themes/$repo_name
-  else
-    eval $(wpi_yq init.setup.$name.npm.dev) --prefix ${PWD}/web/$content_dir/themes/$repo_name
+  # Run npm scripts
+  if [ "$(wpi_yq init.setup.$setup_name.npm)" != "null" ]; then
+    if [ "$cur_env" == "local" ] || [ "$cur_env" == "dev" ]; then
+      # run npm install
+      npm i &> /dev/null --prefix ${PWD}/web/app/themes/$package
+      eval $(wpi_yq init.setup.$setup_name.npm.dev) --prefix ${PWD}/web/app/themes/$package
+    else
+      # run npm install
+      npm i &> /dev/null --production --prefix ${PWD}/web/app/themes/$package
+      eval $(wpi_yq init.setup.$setup_name.npm.prod) --prefix ${PWD}/web/app/themes/$package
+    fi
   fi
 fi
