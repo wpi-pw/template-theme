@@ -143,13 +143,11 @@ if [ "$setup_name" != "null" ]; then
 
   # Run npm scripts
   if [ "$(wpi_yq init.setup.$setup_name.npm)" != "null" ]; then
-    if [ "$cur_env" == "local" ] || [ "$cur_env" == "dev" ]; then
       # run npm install
       npm i &> /dev/null --prefix ${PWD}/web/app/themes/$package
+    if [ "$cur_env" == "local" ] || [ "$cur_env" == "dev" ]; then
       eval $(wpi_yq init.setup.$setup_name.npm.dev) --prefix ${PWD}/web/app/themes/$package
     else
-      # run npm install
-      npm i &> /dev/null --production --prefix ${PWD}/web/app/themes/$package
       eval $(wpi_yq init.setup.$setup_name.npm.prod) --prefix ${PWD}/web/app/themes/$package
     fi
   fi
