@@ -38,7 +38,7 @@ if [ "$(wpi_yq themes.parent.package)" == "wp-cli" ]; then
     wp theme install $(wpi_yq themes.parent.zip) --quiet
   else
     # Get theme version from config
-    if [ "$package_ver" != "null" ] && [ "$package_ver" != "*" ]; then
+    if [ "$package_ver" != "null" ] && [ "$package_ver" ] && [ "$package_ver" != "*" ]; then
       version="--version=$package_ver --force"
     fi
     # Default plugin install via wp-cli
@@ -46,14 +46,14 @@ if [ "$(wpi_yq themes.parent.package)" == "wp-cli" ]; then
   fi
 
   # Run renaming process
-  if [ "$(wpi_yq themes.parent.rename)" != "null" ]; then
+  if [ "$(wpi_yq themes.parent.rename)" != "null" ] && [ "$(wpi_yq themes.parent.rename)" ]; then
     # Run rename commands
     mv ${PWD}/web/$content_dir/themes/$package ${PWD}/web/$content_dir/themes/$(wpi_yq themes.parent.rename)
   fi
 fi
 
 # Get theme version from config
-if [ "$package_ver" != "null" ] && [ "$package_ver" != "*" ]; then
+if [ "$package_ver" != "null" ] && [ "$package_ver" ] && [ "$package_ver" != "*" ]; then
   json_ver=$package_ver
   # check for commit version
   if [ "$dev_commit" == "dev-master" ]; then
@@ -70,16 +70,16 @@ fi
 if [ "$(wpi_yq themes.parent.package)" == "bitbucket" ] || [ "$(wpi_yq themes.parent.package)" == "github" ]; then
   # Install plugin from private/public repository via composer
   # Check for setup settings
-  if [ "$(wpi_yq themes.parent.setup)" != "null" ]; then
+  if [ "$(wpi_yq themes.parent.setup)" != "null" ] && [ "$(wpi_yq themes.parent.setup)" ]; then
     name=$(wpi_yq themes.parent.setup)
 
     # OAUTH for bitbucket via key and secret
-    if [ "$(wpi_yq themes.parent.package)" == "bitbucket" ] && [ "$(wpi_yq init.setup.$name.bitbucket.key)" != "null" ] && [ "$(wpi_yq init.setup.$name.bitbucket.secret)" != "null" ]; then
+    if [ "$(wpi_yq themes.parent.package)" == "bitbucket" ] && [ "$(wpi_yq init.setup.$name.bitbucket.key)" != "null" ] && [ "$(wpi_yq init.setup.$name.bitbucket.key)" ] && [ "$(wpi_yq init.setup.$name.bitbucket.secret)" != "null" ] && [ "$(wpi_yq init.setup.$name.bitbucket.secret)" ]; then
       composer config --global --auth bitbucket-oauth.bitbucket.org $(wpi_yq init.setup.$name.bitbucket.key) $(wpi_yq init.setup.$name.bitbucket.secret)
     fi
 
     # OAUTH for github via key and secret
-    if [ "$(wpi_yq themes.parent.package)" == "github" ] && [ "$(wpi_yq init.setup.$name.github-token)" != "null" ] && [ "$(wpi_yq init.setup.$name.github-token)" != "null" ]; then
+    if [ "$(wpi_yq themes.parent.package)" == "github" ] && [ "$(wpi_yq init.setup.$name.github-token)" != "null" ] && [ "$(wpi_yq init.setup.$name.github-token)" ] && [ "$(wpi_yq init.setup.$name.github-token)" != "null" ] && [ "$(wpi_yq init.setup.$name.github-token)" ]; then
       composer config -g github-oauth.github.com $(wpi_yq init.setup.$name.github-token)
     fi
   fi
@@ -104,7 +104,7 @@ if [ "$(wpi_yq themes.parent.package)" == "bitbucket" ] || [ "$(wpi_yq themes.pa
   fi
 
   # Rename the package if config exist
-  if [ "$(wpi_yq themes.parent.rename)" != "null" ]; then
+  if [ "$(wpi_yq themes.parent.rename)" != "null" ] && [ "$(wpi_yq themes.parent.rename)" ]; then
       package=$(wpi_yq themes.parent.rename)
   fi
 
