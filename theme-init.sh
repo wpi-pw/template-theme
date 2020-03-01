@@ -129,20 +129,20 @@ if [ "$(wpi_yq themes.parent.package)" == "bitbucket" ] || [ "$(wpi_yq themes.pa
 fi
 
 # Check if setup exist
-if [ "$setup_name" != "null" ]; then
+if [ "$setup_name" != "null" ] && [ "$setup_name" ]; then
   composer=$(wpi_yq init.setup.$setup_name.composer)
   # Run install composer script in the theme
-  if [ "$composer" != "null" ] && [ "$composer" == "install" ] || [ "$composer" == "update" ]; then
+  if [ "$composer" != "null" ] && [ "$composer" ]  && [ "$composer" == "install" ] || [ "$composer" == "update" ]; then
     composer $composer -d ${PWD}/web/app/themes/$package $no_dev --quiet
-  elif [ "$composer" != "null" ] && [ "$composer" == "dump-autoload" ]; then
+  elif [ "$composer" != "null" ] && [ "$composer" ]  && [ "$composer" == "dump-autoload" ]; then
     composer dump-autoload -o -d ${PWD}/web/app/themes/$package --quiet
-  elif [ "$composer" != "null" ] && [ "$composer" == "install && dump-autoload" ]; then
+  elif [ "$composer" != "null" ] && [ "$composer" ]  && [ "$composer" == "install && dump-autoload" ]; then
     composer install -d ${PWD}/web/app/themes/$package $no_dev --quiet
     composer dump-autoload -o -d ${PWD}/web/app/themes/$package --quiet
   fi
 
   # Run npm scripts
-  if [ "$(wpi_yq init.setup.$setup_name.npm)" != "null" ]; then
+  if [ "$(wpi_yq init.setup.$setup_name.npm)" != "null" ] && [ "$(wpi_yq init.setup.$setup_name.npm)" ]; then
       # run npm install
       npm i &> /dev/null --prefix ${PWD}/web/app/themes/$package
     if [ "$cur_env" == "local" ] || [ "$cur_env" == "dev" ]; then
