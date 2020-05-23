@@ -27,19 +27,9 @@ setup_name=$(wpi_yq themes.parent.setup)
 # Check the workflow type
 content_dir=$([ "$(wpi_yq init.workflow)" == "bedrock" ] && echo "app" || echo "wp-content")
 
-# Switch package to symlink for specific environment
+# Switch package to theme release for specific environment
 if [[ "$(wpi_yq themes.parent.symlink.env)" == "$cur_env" ]]; then
-  symlink_env=$(wpi_yq themes.parent.symlink.env)
-  symlink_path=$(wpi_yq themes.parent.symlink.path)
-  app_path=$(wpi_yq env.$symlink_env.app_dir)
-  app_content=$(wpi_yq env.$symlink_env.app_content)
-  if [[ -d "$symlink_path" ]]; then
-    printf "${GRN}====================================================${NC}\n"
-    printf "${GRN}Creating symlink for $repo_name                     ${NC}\n"
-    printf "${GRN}====================================================${NC}\n"
-    ln -s $symlink_path ${app_path%/}${app_content%/}/themes/$repo_name
-    exit 1
-  fi
+  theme_release
 fi
 
 # Get the theme and run install by type
