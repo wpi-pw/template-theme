@@ -29,7 +29,7 @@ content_dir=$([ "$(wpi_yq init.workflow)" == "bedrock" ] && echo "app" || echo "
 
 # Switch package to theme release for specific environment
 if [[ "$(wpi_yq themes.parent.symlink.env)" == "$cur_env" ]]; then
-  theme_release
+  theme_release && exit 1
 fi
 
 # Get the theme and run install by type
