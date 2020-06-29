@@ -27,10 +27,16 @@ setup_name=$(wpi_yq themes.parent.setup)
 # Check the workflow type
 content_dir=$([ "$(wpi_yq init.workflow)" == "bedrock" ] && echo "app" || echo "wp-content")
 
-# Switch package to theme release for specific environment
-if [[ "$(wpi_yq themes.parent.symlink.env)" == "$cur_env" ]]; then
-  theme_release && exit
-fi
+# Create array of theme symlinks and loop
+mapfile -t symlinks < <( wpi_yq 'themes.parent.symlink.[*].env' )
+# Get all symlink env and run the script for the current
+for i in "${!symlinks[@]}"
+do
+  # Switch package to theme release for specific environment
+  if [[ "$(wpi_yq themes.parent.symlink.[$i].env)" == "$cur_env" ]]; then
+    theme_release && exit
+  fi
+done
 
 # Get the theme and run install by type
 printf "${GRN}=============================================${NC}\n"
