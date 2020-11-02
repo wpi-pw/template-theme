@@ -115,11 +115,6 @@ if [ "$(wpi_yq themes.parent.package)" == "bitbucket" ] || [ "$(wpi_yq themes.pa
     package_zip="https://github.com/$package/archive/$ver_commit.zip"
   fi
 
-  # Rename the package if config exist
-  if [ "$(wpi_yq themes.parent.rename)" != "null" ] && [ "$(wpi_yq themes.parent.rename)" ]; then
-      package=$(wpi_yq themes.parent.rename)
-  fi
-
   # Get GIT for local and dev
   if [ "$cur_env" == "local" ] || [ "$cur_env" == "dev" ]; then
     # Reset --no-dev
@@ -138,6 +133,12 @@ if [ "$(wpi_yq themes.parent.package)" == "bitbucket" ] || [ "$(wpi_yq themes.pa
     composer config repositories.$package '{"type":"package","package": {"name": "'$package'","version": "'$package_ver'","type": "wordpress-theme","dist": {"url": "'$package_zip'","type": "zip"}}}'
     composer require $package:$package_ver --update-no-dev --quiet
   fi
+fi
+
+# Rename the package if config exist
+if [ "$(wpi_yq themes.parent.rename)" != "null" ] && [ "$(wpi_yq themes.parent.rename)" ]; then
+    package=$(wpi_yq themes.parent.rename)
+    mv ${PWD}/web/$content_dir/themes/$repo_name ${PWD}/web/$content_dir/themes/$(wpi_yq themes.parent.rename)
 fi
 
 # Check if setup exist
