@@ -60,7 +60,7 @@ if [ "$(wpi_yq themes.parent.package)" == "wp-cli" ]; then
   # Run renaming process
   if [ "$(wpi_yq themes.parent.rename)" != "null" ] && [ "$(wpi_yq themes.parent.rename)" ]; then
     # Run rename commands
-    mv ${PWD}/web/$content_dir/themes/$package ${PWD}/web/$content_dir/themes/$(wpi_yq themes.parent.rename)
+    mv ${PWD}/web/$content_dir/themes/$package $(wpi_yq themes.parent.rename)
   fi
 fi
 
